@@ -6,9 +6,21 @@
 #include <vector>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
+
 namespace po = boost::program_options;
 
+
+#include "DefaultFileParser.h"
+#include "WikiFileParser.h"
+
 using namespace std;
+
+#define M_PI       3.14159265358979323846
+typedef pair<double,double> Point;
+
+
+
 
 // A helper function to simplify the main part.
 template<class T>
@@ -103,9 +115,54 @@ int main(int ac, char* av[])
 			return 0;
 		}
 
-		cout << "Format is " << format << "\n";                
+		IFileParser* fileParser;
+		switch( format )
+		{
+		case 0:
+			fileParser = new DefaultFileParser();
+			break;
+		case 1:
+			fileParser = new WikiFileParser();
+			break;
+		default:
+			BOOST_THROW_EXCEPTION( std::logic_error("Bad format" ) );
+		}
+
+
+		
+		ifstream file( vm["input-file"].as< vector<string> >().front() );
+		boost::shared_ptr< vector< vector<double> > > points;
+		if( file.good() )
+		{
+			cout << "Parsing file..." << endl;
+			points = fileParser->parse(file);
+		}
+		else
+		{
+			BOOST_THROW_EXCEPTION( runtime_error("Can't open file") );
+		}
+
+		cout	<< "File has been parsed successfully!" << endl;
+		
+		char c = ' ';
+		while(!(c=='Y' || c=='N' ))
+		{
+			cout 	<< "Display parsed points(Y/N)? ";
+			cin >> c;
+			if( c > 'Z' ) 
+				c -= 'z'-'Z'; //toUpper
+		}
+
+
+
+		if( c=='Y' )
+			BOOST_FOREACH( vector<double> v, *points )
+			{
+				cout << v << endl;
+			}
+
 	}
-	catch(exception& e)
+	catch(std::exception& e)
 	{
 		cout << e.what() << "\n";
 		return 1;
