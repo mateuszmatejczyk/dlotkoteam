@@ -21,16 +21,20 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp> // for customizable graphs
 #include <boost/graph/directed_graph.hpp> // A subclass to provide reasonable arguments to adjacency_list for a typical directed graph
+#include <boost/graph/copy.hpp>
 #include <utility>
 using namespace std;
 
-
-class SympleksToGraphConvereter{
-private :
-	typedef boost::directed_graph<> Graph;
+//	typedef boost::directed_graph<> Graph;
+	typedef boost::adjacency_list<boost::listS, boost::vecS, boost::directedS> Graph;
 	typedef Graph::vertex_descriptor vertex;
 	typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 	typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
+	typedef boost::graph_traits<Graph>::out_edge_iterator out_edge_it;
+
+class SympleksToGraphConvereter{
+public :
+
 	Graph g;
 	map<list<int>,vertex >  sympleksMap;
 	map<vertex, list<int> > inverseSympleksMap;
@@ -42,8 +46,6 @@ private :
 
 	void generateFacesAndConnect(list<int> & sympleks);
 	void writeSympleks(list<int> & sympleks);
-
-public :
 	SympleksToGraphConvereter();
 	string sympleksToString(const list<int> & sympleks);	
 	Graph::vertex_descriptor addSympleks(list<int> & sympleks);
@@ -66,6 +68,7 @@ public :
 	*/
 	void writeGraphToFileStandard(string path);	
 	void writeLegend(string path);
+	void copyGraph(Graph & ngraph);
 };
 
 #endif

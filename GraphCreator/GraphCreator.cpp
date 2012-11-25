@@ -146,6 +146,8 @@ void SympleksToGraphConvereter::writeGraphToFileStandard(string path){
 	
 void SympleksToGraphConvereter::writeLegend(string path){
 		ofstream myfile;
+		
+		
 		myfile.open(path.c_str());
 		int i = 0;
 		for(vector<list<int> >::iterator it = inverseSympleksMap.begin() ; it!= inverseSympleksMap.end() ; ++it, ++i){
@@ -157,6 +159,9 @@ void SympleksToGraphConvereter::writeLegend(string path){
 		myfile.close();
 }
 
+void SympleksToGraphConvereter::copyGraph(vector<list<int> > & ngraph){
+	ngraph = edge;
+}
 
 
 

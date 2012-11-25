@@ -1,11 +1,6 @@
 #include "GraphCreatorBgl.h"
 
 
-typedef boost::directed_graph<> Graph;
-typedef Graph::vertex_descriptor vertex;
-typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
-typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
-
 void SympleksToGraphConvereter::generateFacesAndConnect(list<int> & sympleks){
 			if(sympleks.size() == 1)
 				return;
@@ -14,10 +9,8 @@ void SympleksToGraphConvereter::generateFacesAndConnect(list<int> & sympleks){
 				list<int> templist(sympleks); 
 				templist.remove(*it);
 				Graph::vertex_descriptor tag = addSympleks(templist);
-				g.add_edge(cnumber, tag);
+				boost::add_edge(cnumber,tag,g);
 				++E;
-				
-				
 			}
 		}
 void SympleksToGraphConvereter::writeSympleks(list<int> & sympleks){
@@ -43,7 +36,8 @@ string SympleksToGraphConvereter::sympleksToString(const list<int> & sympleks){
 }
 Graph::vertex_descriptor SympleksToGraphConvereter::addSympleks(list<int> & sympleks){
 		if (sympleksMap.find(sympleks) == sympleksMap.end()){
-			Graph::vertex_descriptor v = g.add_vertex();
+			vertex v = boost::add_vertex(g);
+			//vertex v = g.add_vertex();
 			sympleksMap[sympleks] = v;
 			inverseSympleksMap[v] = sympleks;
 			++V;
@@ -102,8 +96,8 @@ void SympleksToGraphConvereter::getBoundry(list<int> & sympleks){
 		Graph::vertex_descriptor number = sympleksMap[sympleks];
 		
 		
-		typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
-		IndexMap index = get(boost::vertex_index, g);
+		//typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
+		//IndexMap index = get(boost::vertex_index, g);
 		typedef boost::graph_traits < Graph >::adjacency_iterator adjacency_iterator;
  
 		std::pair<adjacency_iterator, adjacency_iterator> neighbors =
@@ -117,8 +111,9 @@ void SympleksToGraphConvereter::getBoundry(list<int> & sympleks){
 	}
 	/*
 	* opis grafu V,E
-	* a potem V linijek postaci (i-ta linijka od 0 ... V-1
-	* n a1 a2 ... an takich ze isntieje krawedz z i -> ak , 1<=k <=n
+	* a potem V dwu-linijek postaci  
+	* (vertex_number
+	* n : a1 a2 ... an takich ze isntieje krawedz z i -> ak , 1<=k <=n)
 	*
 	*/
 void SympleksToGraphConvereter::writeGraphToFileVertexNode(string path){
@@ -129,23 +124,30 @@ void SympleksToGraphConvereter::writeGraphToFileVertexNode(string path){
 		IndexMap index = get(boost::vertex_index, g);
 		typedef boost::graph_traits<Graph>::vertex_iterator vertex_iter;
 		std::pair<vertex_iter, vertex_iter> vp;
-    for (vp = vertices(g); vp.first != vp.second; ++vp.first)
+		out_edge_it ei,ei_end;
+		for (vp = vertices(g); vp.first != vp.second; ++vp.first);{
+			cout << index[*(vp.first)] << endl;
+			cout << boost::out_degree(*(vp.first),g) << " : " ;
+			for(boost::tie(ei,ei_end) = out_edges(*(vp.first),g) ; ei!= ei_end ; ++ei)
+				cout << index[boost::target(*ei,g)] << " ";
+		}
 			
 	
 		myfile.close();
 	}
 	
 	void SympleksToGraphConvereter::writeAllVerticesToFile(string path){
-	ofstream myfile;
-	 myfile.open(path.c_str());;
-    IndexMap index = get(boost::vertex_index, g);
-    
-    std::pair<vertex_iter, vertex_iter> vp;
-    for (vp = vertices(g); vp.first != vp.second; ++vp.first){
-      myfile << index[*vp.first] <<  " ";
-	  myfile << std::endl;
-	 }
-	 myfile.close();
+		ofstream myfile;
+		myfile.open(path.c_str());;
+		IndexMap index = get(boost::vertex_index, g);
+		
+		std::pair<vertex_iter, vertex_iter> vp;
+		for (vp = vertices(g); vp.first != vp.second; ++vp.first){
+			myfile << index[*vp.first] ;;
+			
+			myfile << std::endl;
+		 }
+		 myfile.close();
 	}
 	/*
 	* standardowy opis grafu tzn: V,E - wierzcholki krawedzie
@@ -172,7 +174,11 @@ void SympleksToGraphConvereter::writeLegend(string path){
 		for(map<list<int>, Graph::vertex_descriptor >:: iterator it = sympleksMap.begin() ; it!= sympleksMap.end() ; ++it)
 			myfile << sympleksToString(it->first) << " : " << index[it->second] << endl;
 		myfile.close();
-	}
+}
+
+void SympleksToGraphConvereter::copyGraph(Graph & ngraph){
+	boost::copy_graph(g,ngraph);
+}
 
 
 

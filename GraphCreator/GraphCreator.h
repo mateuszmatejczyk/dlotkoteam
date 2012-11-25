@@ -12,7 +12,7 @@
 using namespace std;
 
 class SympleksToGraphConvereter{
-private :
+public :
 	map<list<int>,int >  sympleksMap;
 	vector<list<int> > inverseSympleksMap;
 	vector<list<int> > edge;
@@ -25,7 +25,7 @@ private :
 	void writeSympleks(list<int> & sympleks);
 	
 	// tu mozna jeszcze zbiory rozlaczne zaimplentowac
-public :
+
 	SympleksToGraphConvereter();
 	string sympleksToString(list<int> & sympleks);
 	int addSympleks(list<int> & sympleks);
@@ -47,6 +47,7 @@ public :
 	*/
 	void writeGraphToFileStandard(string path);
 	void writeLegend(string path);
+	void copyGraph(vector<list<int > > &ngraph);
 };
 
 

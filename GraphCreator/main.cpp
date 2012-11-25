@@ -3,6 +3,9 @@ using namespace std;
 
 int main() {
 	SympleksToGraphConvereter stgc;
+	
+	
+	
 	stgc.readFromFile("/home/maciek/Informatyka/Programy/dane/poincare.dat");
 	stgc.writeGraphToFileVertexNode("/home/maciek/Informatyka/Programy/dane/graphPoincare.txt");
 	//stgc.readFromFile("E:\\Dropbox\\Studia\\Informatyka\\ProjektZespolowy\\dane\\poincare.dat");
