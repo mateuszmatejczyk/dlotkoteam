@@ -5,20 +5,14 @@
 #include <cmath>
 #include <vector>
 
-#include <boost/graph/graphviz.hpp>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
-
 
 namespace po = boost::program_options;
 
 
-#include "DefaultPointParser.h"
-#include "WikiPointParser.h"
-#include "BruteForceNeighborhoodGraph.h"
-#include "EuclideanSquareDistance.h"
-#include "InductiveVRComplexBuilder.h" 
-#include "PointsDimensionTest.h"
+#include "DefaultFileParser.h"
+#include "WikiFileParser.h"
 
 using namespace std;
 
@@ -37,15 +31,10 @@ ostream& operator<<(ostream& os, const vector<T>& v)
 }
 
 
-#include <list>
-
 int main(int ac, char* av[])
 {
-
 	try {
 		int format;
-		double epsylon;
-		int k;
 		string config_file;
 	
 		// Declare a group of options that will be 
@@ -64,12 +53,7 @@ int main(int ac, char* av[])
 		po::options_description config("Configuration");
 		config.add_options()
 			("format,f", po::value<int>(&format)->default_value(0), 
-				  "0 - default format\n1 - wiki format")
-			("epsylon,e", po::value<double>(&epsylon), 
-				  "neighbourhood graph epsylon")
-			("kskeleton,k", po::value<int>(&k), 
-				  "k skeleton")
-
+				  "0 - default format/n1 - wiki format")
 			;
 
 		// Hidden options, will be allowed both on command line and
@@ -131,108 +115,56 @@ int main(int ac, char* av[])
 			return 0;
 		}
 
-		
-		boost::shared_ptr<AdjacencyList> aList;
-		string filename = vm["input-file"].as< vector<string> >().front() ;
+		IFileParser* fileParser;
+		switch( format )
+		{
+		case 0:
+			fileParser = new DefaultFileParser();
+			break;
+		case 1:
+			fileParser = new WikiFileParser();
+			break;
+		default:
+			BOOST_THROW_EXCEPTION( std::logic_error("Bad format" ) );
+		}
 
-		ifstream file( filename );
+
+		
+		ifstream file( vm["input-file"].as< vector<string> >().front() );
+		boost::shared_ptr< vector< vector<double> > > points;
 		if( file.good() )
 		{
 			cout << "Parsing file..." << endl;
-			BruteForceNeighborhoodGraph graphBuilder;
-			switch( format )
-			{
-			case 0:
-				aList = graphBuilder(file, DefaultPointParser(), epsylon*epsylon, EuclideanSquareDistance() );
-				break;
-			case 1:
-				aList = graphBuilder(file, WikiPointParser(), epsylon*epsylon, EuclideanSquareDistance() );
-				break;
-			default:
-				BOOST_THROW_EXCEPTION( std::logic_error("Bad format" ) );
-			}
+			points = fileParser->parse(file);
 		}
 		else
 		{
 			BOOST_THROW_EXCEPTION( runtime_error("Can't open file") );
 		}
 
-
-		boost::shared_ptr< IVRComplexBuilder > VRComplexBuilder(new InductiveVRComplexBuilder());
-
-		boost::shared_ptr< VRComplexGraph > g = (*VRComplexBuilder)(*aList, k);
-
-
-		property_map<VRComplexGraph, double Simplex::*>::type filtration =  get(&Simplex::filtration, *g);
-
-
-		{
-			size_t i = filename.rfind('.');
-			if (i != std::string::npos)
-				filename.erase(filename.begin() + i, filename.end());
-		}
-
-		string graphvizOutfile = filename+ "-vr_complex.dot";
+		cout	<< "File has been parsed successfully!" << endl;
 		
-		std::cout << "Writing GraphViz output to " << graphvizOutfile << "... ";
-		std::cout.flush();
-
-		typedef std::map<VRComplexGraph::vertex_descriptor, size_t>IndexMap;
-		IndexMap mapIndex;
-		boost::associative_property_map<IndexMap> propmapIndex(mapIndex);
-
-		typedef std::map<VRComplexGraph::vertex_descriptor, string> LabelMap;
-		LabelMap mapLabel;
-		boost::associative_property_map<LabelMap> propmapLabel(mapLabel);
-
-		//indexing the vertices
-		int j=0;
-		BGL_FORALL_VERTICES(v, *g, VRComplexGraph)
+		char c = ' ';
+		while(!(c=='Y' || c=='N' ))
 		{
-			put(propmapIndex, v, j++);
-			string s;
-			BOOST_FOREACH( int u, (*g)[v].V )
-				s+= lexical_cast<string>(u);
-			s+= string(" (") + lexical_cast<string>((*g)[v].filtration) + ")";
-			
-			put(propmapLabel, v, s);
+			cout 	<< "Display parsed points(Y/N)? ";
+			cin >> c;
+			if( c > 'Z' ) 
+				c -= 'z'-'Z'; //toUpper
 		}
 
 
-		boost::dynamic_properties dp;
-		//dp.property("label", get(&Simplex::filtration, *g));
-		dp.property("node_id", propmapIndex);
-		dp.property("label", propmapLabel);
 
-
-		write_graphviz_dp(ofstream(graphvizOutfile), *g, dp);
-		cout << " Done!" << endl;
-
-
-		string metisOutfile = filename + "-vr_complex.graph";
-		cout << "Writing METIS output to " << metisOutfile << "... ";
-		ofstream of(metisOutfile);
-		
-		of << num_vertices(*g) << " " << num_edges(*g) << " 10 2" << endl;
-		BGL_FORALL_VERTICES(v, *g, VRComplexGraph)
-		{
-			of << (*g)[v].V.size() << " " << (*g)[v].filtration;
-			VRComplexGraph::out_edge_iterator it,end;
-			tuples::tie(it,end) = out_edges(v, *g);
-			for( ;it!=end;++it )
-				of << " " << get(propmapIndex, target( *it, *g) );
-			of << endl;
-		}
-
-		of.flush();
-		of.close();
-		
-		cout << "Done!" << endl;
+		if( c=='Y' )
+			BOOST_FOREACH( vector<double> v, *points )
+			{
+				cout << v << endl;
+			}
 
 	}
 	catch(std::exception& e)
 	{
-		cout << "ERROR: " << e.what() << "\n";
+		cout << e.what() << "\n";
 		return 1;
 	}    
 	return 0;
