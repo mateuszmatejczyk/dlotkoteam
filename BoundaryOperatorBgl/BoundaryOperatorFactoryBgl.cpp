@@ -1,19 +1,9 @@
 #include "BoundaryOperatorFactoryBgl.h"
 using namespace std;
-void BoundaryOperatorFactory::clean(){
-	if( this->criticals != NULL ){
-		delete this->criticals;
 
-	}
-	this->criticals = new vector<int>();
-}
 BoundaryOperatorFactory::BoundaryOperatorFactory(){
-	this->criticals = NULL;
 }
 BoundaryOperatorFactory::~BoundaryOperatorFactory(){
-	if( this->criticals != NULL ){
-		delete this->criticals;
-	}
 
 }
 int BoundaryOperatorFactory::at( Vertex& v){
@@ -25,8 +15,7 @@ Vertex BoundaryOperatorFactory::at( int  v){
 }
 void BoundaryOperatorFactory::readFromFile( string path ){
 
-	this->clean();
-
+	vector<int> criticals;
 	ifstream myfile( path.c_str() );
 	if( myfile.is_open() ){
 		string mstring;
@@ -36,8 +25,10 @@ void BoundaryOperatorFactory::readFromFile( string path ){
 			stringstream ss( mstring );
 			while( ss >> tmp ){
 
-				this->criticals->push_back( tmp );
+				criticals.push_back( tmp );
 			}
+
+
 	  }
 	  getline( myfile, mstring );
 	  stringstream ss( mstring );
@@ -63,7 +54,7 @@ void BoundaryOperatorFactory::readFromFile( string path ){
 		  this->addEdges( v_number, edges );
 
 	  }
-
+	  this->setCriticals( criticals );
 	  myfile.close();
 	}
 }
@@ -87,27 +78,39 @@ void BoundaryOperatorFactory::writeToFile( string path , BoundaryOperator &op ){
 
 	myfile.close();
 }
-BoundaryOperator BoundaryOperatorFactory::getBoundary(  ){
-	return this->getBoundary( this->graph, *this->criticals );
+void BoundaryOperatorFactory::setGraph( Graph& g, vector<Vertex> &_criticals ){
+
+}
+void BoundaryOperatorFactory::setGraph( Graph& g, vector<int> &_criticals ){
+
 }
 
-/*
- * BoundaryOperator => boost::multi_array<Vertex, 2>
- */
-BoundaryOperator BoundaryOperatorFactory::getBoundary( Graph &g, vector<int> &_criticals ){
-	vector< Vertex > criticals;
-
+void BoundaryOperatorFactory::setCriticals( vector<int> &_criticals ){
 
 	BOOST_FOREACH( int v, _criticals ){
-		criticals.push_back( this->at( v ) );
+		this->criticals.push_back( this->at( v ) );
 	}
 	#ifdef DEBUG
 		cout<<"Criticals:\n";
-		BOOST_FOREACH( Vertex c, criticals ){
+		BOOST_FOREACH( Vertex c, this->criticals ){
 			cout<< this->at( c ) <<" ";
 		}
 		cout<<"\n===========================\n";
 	#endif
+
+}
+void BoundaryOperatorFactory::setCriticals( vector<Vertex> &_criticals ){
+	this->criticals = _criticals;
+	#ifdef DEBUG
+		cout<<"Criticals:\n";
+		BOOST_FOREACH( Vertex c, this->criticals ){
+			cout<< this->at( c ) <<" ";
+		}
+		cout<<"\n===========================\n";
+	#endif
+}
+BoundaryOperator BoundaryOperatorFactory::getBoundary(  ){
+
 	BoundaryOperator op;
 	PathsCounter pc( boost::extents[this->size][this->size] );
 	vector< Vertex > ordered;
