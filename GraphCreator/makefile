@@ -1,3 +1,4 @@
+
 #cel: od czego zalezy cel
 #	jak to zrobic
 
